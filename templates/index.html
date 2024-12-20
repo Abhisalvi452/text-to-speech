@@ -1,144 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Enhanced Text-to-Speech</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <style>
-        .parameter-control {
-            margin: 10px 0;
-        }
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .slider-value {
-            min-width: 60px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech Converter</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpine.js/3.13.3/cdn.min.js"></script>
 </head>
-<body>
-    <h1>Text-to-Speech Converter</h1>
-    
-    <div>
-        <textarea id="text" rows="5" cols="50" placeholder="Enter text to convert"></textarea>
-    </div>
+<body class="min-h-screen transition-colors duration-200" 
+      x-data="{ 
+          darkMode: localStorage.getItem('darkMode') === 'true',
+          selectedVoice: '',
+          audioPath: null,
+          loading: false,
+          text: '',
+          rate: '0',
+          volume: '0',
+          pitch: '0',
+          style: 'default'
+      }"
+      :class="darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'"
+      x-init="
+          $watch('darkMode', value => localStorage.setItem('darkMode', value));
+          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              darkMode = true;
+          }
+      ">
 
-    <div>
-        <label for="voice">Select Voice:</label>
-        <select id="voice">
-            {% for voice_name, voice_info in voices.items() %}
-                <option value="{{ voice_name }}">{{ voice_name }}</option>
-            {% endfor %}
-        </select>
-    </div>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Text to Speech Converter</h1>
+            <button @click="darkMode = !darkMode" 
+                    class="p-2 rounded-lg" 
+                    :class="darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'">
+                <span x-text="darkMode ? '🌞' : '🌙'" class="text-xl"></span>
+            </button>
+        </header>
 
-    <div>
-        <label for="style">Select Style:</label>
-        <select id="style">
-            <option value="default">Default</option>
-        </select>
-    </div>
-
-    <div class="parameter-control">
-        <label>Speech Rate:</label>
-        <div class="slider-container">
-            <input type="range" id="rate" min="-100" max="100" value="0">
-            <span class="slider-value" id="rate-value">+0%</span>
-        </div>
-    </div>
-
-    <div class="parameter-control">
-        <label>Volume:</label>
-        <div class="slider-container">
-            <input type="range" id="volume" min="-100" max="100" value="0">
-            <span class="slider-value" id="volume-value">+0%</span>
-        </div>
-    </div>
-
-    <div class="parameter-control">
-        <label>Pitch:</label>
-        <div class="slider-container">
-            <input type="range" id="pitch" min="-100" max="100" value="0">
-            <span class="slider-value" id="pitch-value">+0Hz</span>
-        </div>
-    </div>
-
-    <button onclick="generateSpeech()">Generate Speech</button>
-
-    <div id="audio-player" style="display: none; margin-top: 20px;">
-        <audio controls id="audio-element"></audio>
-        <button onclick="downloadAudio()">Download Audio</button>
-    </div>
-
-    <script>
-        // Update style options when voice changes
-        $('#voice').change(function() {
-            const selectedVoice = $(this).val();
-            $.get(`/voice_features/${selectedVoice}`, function(data) {
-                const styleSelect = $('#style');
-                styleSelect.empty();
-                styleSelect.append($('<option>').val('default').text('Default'));
-                data.styles.forEach(style => {
-                    if (style !== 'default') {
-                        styleSelect.append($('<option>').val(style).text(style));
-                    }
-                });
-            });
-        });
-
-        // Update slider values
-        function updateSliderValue(slider, value, unit) {
-            $(`#${slider}-value`).text((value >= 0 ? '+' : '') + value + unit);
-        }
-
-        $('#rate').on('input', function() {
-            updateSliderValue('rate', $(this).val(), '%');
-        });
-
-        $('#volume').on('input', function() {
-            updateSliderValue('volume', $(this).val(), '%');
-        });
-
-        $('#pitch').on('input', function() {
-            updateSliderValue('pitch', $(this).val(), 'Hz');
-        });
-
-        function generateSpeech() {
-            const formData = new FormData();
-            formData.append('text', $('#text').val());
-            formData.append('voice', $('#voice').val());
-            formData.append('style', $('#style').val());
-            formData.append('rate', $('#rate-value').text());
-            formData.append('volume', $('#volume-value').text());
-            formData.append('pitch', $('#pitch-value').text());
-
-            $.ajax({
-                url: '/generate_audio',
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    if (response.success) {
-                        $('#audio-element').attr('src', response.audio_path);
-                        $('#audio-player').show();
-                        window.currentAudioFile = response.filename;
+        <!-- Main Form -->
+        <div class="max-w-4xl mx-auto" :class="darkMode ? 'bg-gray-800' : 'bg-white'" class="p-6 rounded-lg shadow-lg">
+            <form @submit.prevent="
+                loading = true;
+                fetch('/generate_audio', {
+                    method: 'POST',
+                    body: new FormData($event.target)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        audioPath = data.audio_path;
                     } else {
-                        alert('Error: ' + response.error);
+                        alert(data.error);
                     }
-                },
-                error: function() {
-                    alert('Error generating audio');
-                }
-            });
-        }
+                    loading = false;
+                })">
 
-        function downloadAudio() {
-            if (window.currentAudioFile) {
-                window.location.href = '/download_audio/' + window.currentAudioFile;
-            }
-        }
-    </script>
+                <!-- Text Input -->
+                <div class="mb-6">
+                    <label class="block mb-2 font-semibold">Enter Text</label>
+                    <textarea 
+                        name="text" 
+                        x-model="text"
+                        required
+                        :class="darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'"
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                        rows="4"></textarea>
+                </div>
+
+                <!-- Voice Selection -->
+                <div class="mb-6">
+                    <label class="block mb-2 font-semibold">Select Voice</label>
+                    <select 
+                        name="voice" 
+                        x-model="selectedVoice"
+                        required
+                        @change="
+                            fetch(`/voice_features/${selectedVoice}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (!data.error) {
+                                    style = 'default';
+                                }
+                            })"
+                        :class="darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'"
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                        <option value="">Choose a voice...</option>
+                        <template x-for="(info, name) in voices" :key="name">
+                            <option :value="name" x-text="name"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Controls Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <!-- Rate Control -->
+                    <div>
+                        <label class="block mb-2 font-semibold">Rate</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="range" 
+                                name="rate" 
+                                x-model="rate"
+                                min="-100" 
+                                max="100" 
+                                class="flex-1 mr-2"
+                            >
+                            <span x-text="rate + '%'" class="w-16 text-right"></span>
+                        </div>
+                    </div>
+
+                    <!-- Volume Control -->
+                    <div>
+                        <label class="block mb-2 font-semibold">Volume</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="range" 
+                                name="volume" 
+                                x-model="volume"
+                                min="-100" 
+                                max="100" 
+                                class="flex-1 mr-2"
+                            >
+                            <span x-text="volume + '%'" class="w-16 text-right"></span>
+                        </div>
+                    </div>
+
+                    <!-- Pitch Control -->
+                    <div>
+                        <label class="block mb-2 font-semibold">Pitch</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="range" 
+                                name="pitch" 
+                                x-model="pitch"
+                                min="-100" 
+                                max="100" 
+                                class="flex-1 mr-2"
+                            >
+                            <span x-text="pitch + 'Hz'" class="w-16 text-right"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center">
+                    <button 
+                        type="submit"
+                        :disabled="loading || !text || !selectedVoice"
+                        :class="{
+                            'bg-blue-600 hover:bg-blue-700': !loading && text && selectedVoice,
+                            'bg-gray-400': loading || !text || !selectedVoice
+                        }"
+                        class="px-6 py-3 rounded-lg text-white font-semibold transition-colors duration-200">
+                        <span x-show="!loading">Generate Speech</span>
+                        <span x-show="loading">Processing...</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Audio Player -->
+            <div x-show="audioPath" class="mt-8">
+                <h3 class="text-xl font-semibold mb-4">Generated Audio</h3>
+                <div class="flex flex-col items-center space-y-4">
+                    <audio controls :src="audioPath" class="w-full max-w-md"></audio>
+                    <a :href="'/download_audio/' + audioPath.split('/').pop()" 
+                       class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200">
+                        <span class="mr-2">⬇️</span>
+                        Download Audio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
