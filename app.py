@@ -1,17 +1,30 @@
+# app.py
 import os
 import edge_tts
 import asyncio
+import logging
 from flask import Flask, render_template, request, send_from_directory, jsonify
+from datetime import datetime
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 # Configure static folder for generated audio
-AUDIO_DIR = os.path.join(os.getcwd(), 'generated_audio')
+AUDIO_DIR = 'generated_audio'
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-# Your existing voices dictionary remains the same
+# Try to set proper permissions
+try:
+    os.chmod(AUDIO_DIR, 0o755)
+except Exception as e:
+    logger.error(f"Could not set permissions on audio directory: {str(e)}")
+
+# Voice configuration dictionary
 voices = {
-# English Voices (Categorized by Region)
+    # English Voices (Categorized by Region)
     'United States': {
         'Emma (US)': {
             'voice_id': 'en-US-EmmaNeural',
@@ -54,214 +67,58 @@ voices = {
             'styles': ['default']
         }
     },
-    'Canada': {
-        'Linda (CA)': {
-            'voice_id': 'en-CA-LiamNeural',
-            'styles': ['default']
-        },
-        'Liam (CA)': {
-            'voice_id': 'en-CA-ClaraNeural',
-            'styles': ['default']
-        }
-    },
-    'Ireland': {
-        'Connor (IE)': {
-            'voice_id': 'en-IE-ConnorNeural',
-            'styles': ['default']
-        },
-        'Emily (IE)': {
-            'voice_id': 'en-IE-EmilyNeural',
-            'styles': ['default']
-        }
-    },
-    'India': {
-        'Rosa (IN)': {
-            'voice_id': 'en-IN-NeerjaNeural',
-            'styles': ['default']
-        },
-        'Ravi (IN)': {
-            'voice_id': 'en-IN-PrabhatNeural',
-            'styles': ['default']
-        }
-    },
-
-    # Indian Regional Languages
-    'Hindi': {
-        'Swara (HI)': {
-            'voice_id': 'hi-IN-SwaraNeural',
-            'styles': ['default']
-        },
-        'Madhur (HI)': {
-            'voice_id': 'hi-IN-MadhurNeural',
-            'styles': ['default']
-        }
-    },
-    'Tamil': {
-        'Pallavi (TA)': {
-            'voice_id': 'ta-IN-PallaviNeural',
-            'styles': ['default']
-        },
-        'Valluvar (TA)': {
-            'voice_id': 'ta-IN-ValluvarNeural',
-            'styles': ['default']
-        }
-    },
-    'Telugu': {
-        'Mohan (TE)': {
-            'voice_id': 'te-IN-MohanNeural',
-            'styles': ['default']
-        },
-        'Shruti (TE)': {
-            'voice_id': 'te-IN-ShrutiNeural',
-            'styles': ['default']
-        }
-    },
-    'Malayalam': {
-        'Sobhana (ML)': {
-            'voice_id': 'ml-IN-SobhanaNeural',
-            'styles': ['default']
-        },
-        'Midhun (ML)': {
-            'voice_id': 'ml-IN-MidhunNeural',
-            'styles': ['default']
-        }
-    },
-    'Kannada': {
-        'Gagan (KN)': {
-            'voice_id': 'kn-IN-GaganNeural',
-            'styles': ['default']
-        },
-        'Sapna (KN)': {
-            'voice_id': 'kn-IN-SapnaNeural',
-            'styles': ['default']
-        }
-    },
-    'Gujarati': {
-        'Dhwani (GU)': {
-            'voice_id': 'gu-IN-DhwaniNeural',
-            'styles': ['default']
-        },
-        'Niranjan (GU)': {
-            'voice_id': 'gu-IN-NiranjanNeural',
-            'styles': ['default']
-        }
-    },
-    'Marathi': {
-        'Aarohi (MR)': {
-            'voice_id': 'mr-IN-AarohiNeural',
-            'styles': ['default']
-        },
-        'Manohar (MR)': {
-            'voice_id': 'mr-IN-ManoharNeural',
-            'styles': ['default']
-        }
-    },
-    'Bengali': {
-        'Tanishaa (BN)': {
-            'voice_id': 'bn-IN-TanishaaNeural',
-            'styles': ['default']
-        },
-        'Bashkar (BN)': {
-            'voice_id': 'bn-IN-BashkarNeural',
-            'styles': ['default']
-        }
-    },
-    'Punjabi': {
-        'Amala (PA)': {
-            'voice_id': 'pa-IN-AmaraNeural',
-            'styles': ['default']
-        },
-        'Gurdeep (PA)': {
-            'voice_id': 'pa-IN-GurdeepNeural',
-            'styles': ['default']
-        }
-    },
-    'Odia': {
-        'Prachi (OR)': {
-            'voice_id': 'or-IN-PrachiNeural',
-            'styles': ['default']
-        },
-        'Manish (OR)': {
-            'voice_id': 'or-IN-ManishNeural',
-            'styles': ['default']
-        }
-    },
-    'Assamese': {
-        'Nabanita (AS)': {
-            'voice_id': 'as-IN-NabanitaNeural',
-            'styles': ['default']
-        },
-        'Manish (AS)': {
-            'voice_id': 'as-IN-ManishNeural',
-            'styles': ['default']
-        }
-    },
-
-    # Multilingual Models
-    'Multilingual': {
-        'Emma (Multi)': {
-            'voice_id': 'en-US-EmmaMultilingualNeural',
-            'styles': ['default']
-        },
-        'Guy (Multi)': {
-            'voice_id': 'fr-FR-VivienneMultilingualNeural',
-            'styles': ['default']
-        },
-        'Serafina (Multi)': {
-            'voice_id': 'de-DE-SeraphinaMultilingualNeural',
-            'styles': ['default']
-        },
-        'Florian (Multi)': {
-            'voice_id': 'de-DE-FlorianMultilingualNeural',
-            'styles': ['default']
-        },
-        'Remy (Multi)': {
-            'voice_id': 'fr-FR-RemyMultilingualNeural',
-            'styles': ['default']
-        },
-        'Ava (Multi)': {
-            'voice_id': 'en-US-AvaMultilingualNeural',
-            'styles': ['default']
-        },
-        'Andrew (Multi)': {
-            'voice_id': 'en-US-AndrewMultilingualNeural',
-            'styles': ['default']
-        },
-        'Brian (Multi)': {
-            'voice_id': 'en-US-caBrianMultilingualNeural',
-            'styles': ['default']
-        }
-    }
+    # ... (rest of your voices dictionary)
 }
 
-    # ... (keeping your existing voices dictionary as is)
+def cleanup_old_files():
+    """Clean up files older than 24 hours"""
+    try:
+        current_time = datetime.now()
+        for filename in os.listdir(AUDIO_DIR):
+            filepath = os.path.join(AUDIO_DIR, filename)
+            file_time = datetime.fromtimestamp(os.path.getctime(filepath))
+            if (current_time - file_time).days >= 1:
+                os.remove(filepath)
+                logger.info(f"Cleaned up old file: {filename}")
+    except Exception as e:
+        logger.error(f"Error during cleanup: {str(e)}")
+
+@app.before_request
+def before_request():
+    """Run cleanup before each request"""
+    cleanup_old_files()
 
 @app.route('/')
 def index():
-    flat_voices = {}
-    for category, voice_group in voices.items():
-        flat_voices.update(voice_group)
-    return render_template('index.html', voices=flat_voices)
+    try:
+        flat_voices = {}
+        for category, voice_group in voices.items():
+            flat_voices.update(voice_group)
+        return render_template('index.html', voices=flat_voices)
+    except Exception as e:
+        logger.error(f"Error rendering index: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/generate_audio', methods=['POST'])
 async def generate_audio():
-    # Get basic parameters
-    text = request.form.get('text')
-    selected_voice = request.form.get('voice')
-    selected_style = request.form.get('style', 'default')
-    
-    # Get additional TTS parameters
-    rate = request.form.get('rate', '+0%')  # Default: normal speed
-    volume = request.form.get('volume', '+0%')  # Default: normal volume
-    pitch = request.form.get('pitch', '+0Hz')  # Default: normal pitch
-    
-    if not text or not selected_voice:
-        return jsonify({
-            'error': 'Please provide text and select a voice.',
-            'success': False
-        })
-    
     try:
+        # Get basic parameters
+        text = request.form.get('text')
+        selected_voice = request.form.get('voice')
+        selected_style = request.form.get('style', 'default')
+        
+        # Get additional TTS parameters with defaults
+        rate = request.form.get('rate', '+0%')
+        volume = request.form.get('volume', '+0%')
+        pitch = request.form.get('pitch', '+0Hz')
+        
+        if not text or not selected_voice:
+            return jsonify({
+                'error': 'Please provide text and select a voice.',
+                'success': False
+            })
+        
+        # Find voice ID
         voice_id = None
         for category in voices.values():
             if selected_voice in category:
@@ -279,20 +136,24 @@ async def generate_audio():
         if selected_style != 'default':
             voice_id = f"{voice_id}(Style:{selected_style})"
         
-        # Create unique filename based on parameters
-        audio_filename = f"{selected_voice.replace(' ', '_')}_{selected_style}_{hash(text)}_{rate}_{volume}_{pitch}.mp3"
+        # Create unique filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        audio_filename = f"{selected_voice.replace(' ', '_')}_{timestamp}_{hash(text)}_{rate}_{volume}_{pitch}.mp3"
         audio_filepath = os.path.join(AUDIO_DIR, audio_filename)
         
-        # Create communicate instance with all parameters
+        logger.debug(f"Generating audio: {audio_filepath}")
+        
+        # Create communicate instance with parameters
         communicate = edge_tts.Communicate(
             text=text,
             voice=voice_id,
-            rate=rate,      # e.g., '+50%', '-20%'
-            volume=volume,  # e.g., '+50%', '-20%'
-            pitch=pitch     # e.g., '+50Hz', '-20Hz'
+            rate=rate,
+            volume=volume,
+            pitch=pitch
         )
         
         await communicate.save(audio_filepath)
+        logger.debug(f"Audio generated successfully")
         
         return jsonify({
             'success': True,
@@ -306,6 +167,7 @@ async def generate_audio():
         })
     
     except Exception as e:
+        logger.error(f"Error generating audio: {str(e)}")
         return jsonify({
             'error': str(e),
             'success': False
@@ -313,29 +175,80 @@ async def generate_audio():
 
 @app.route('/generated_audio/<filename>')
 def serve_audio(filename):
-    return send_from_directory(AUDIO_DIR, filename)
+    try:
+        filepath = os.path.join(AUDIO_DIR, filename)
+        if not os.path.exists(filepath):
+            logger.error(f"File not found: {filepath}")
+            return jsonify({'error': 'Audio file not found'}), 404
+            
+        return send_from_directory(AUDIO_DIR, filename)
+    except Exception as e:
+        logger.error(f"Error serving audio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/download_audio/<filename>')
 def download_audio(filename):
     try:
+        filepath = os.path.join(AUDIO_DIR, filename)
+        if not os.path.exists(filepath):
+            logger.error(f"File not found for download: {filepath}")
+            return jsonify({'error': 'Audio file not found'}), 404
+            
         return send_from_directory(AUDIO_DIR, filename, as_attachment=True)
     except Exception as e:
-        return str(e), 404
+        logger.error(f"Error downloading audio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-# New endpoint to get available voice features
 @app.route('/voice_features/<voice_name>')
 def get_voice_features(voice_name):
-    for category in voices.values():
-        if voice_name in category:
-            voice_info = category[voice_name]
+    try:
+        for category in voices.values():
+            if voice_name in category:
+                voice_info = category[voice_name]
+                return jsonify({
+                    'voice_id': voice_info['voice_id'],
+                    'styles': voice_info['styles'],
+                    'rate_range': {'min': '-100%', 'max': '+100%', 'default': '+0%'},
+                    'volume_range': {'min': '-100%', 'max': '+100%', 'default': '+0%'},
+                    'pitch_range': {'min': '-100Hz', 'max': '+100Hz', 'default': '+0Hz'}
+                })
+        return jsonify({'error': 'Voice not found'}), 404
+    except Exception as e:
+        logger.error(f"Error getting voice features: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/health')
+def health_check():
+    try:
+        # Check if audio directory exists and is writable
+        if not os.path.exists(AUDIO_DIR):
             return jsonify({
-                'voice_id': voice_info['voice_id'],
-                'styles': voice_info['styles'],
-                'rate_range': {'min': '-100%', 'max': '+100%', 'default': '+0%'},
-                'volume_range': {'min': '-100%', 'max': '+100%', 'default': '+0%'},
-                'pitch_range': {'min': '-100Hz', 'max': '+100Hz', 'default': '+0Hz'}
+                'status': 'error',
+                'message': 'Audio directory does not exist'
             })
-    return jsonify({'error': 'Voice not found'}), 404
+        
+        # Test write permissions
+        test_file = os.path.join(AUDIO_DIR, 'test.txt')
+        try:
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+        except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'message': f'Audio directory not writable: {str(e)}'
+            })
+            
+        return jsonify({
+            'status': 'healthy',
+            'audio_dir': AUDIO_DIR,
+            'edge_tts_version': edge_tts.__version__
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        })
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
