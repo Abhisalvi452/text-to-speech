@@ -3,176 +3,521 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text to Speech Converter</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpine.js/3.13.3/cdn.min.js"></script>
+    <title>AI Text-to-Speech | Abhi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #00ff88;
+            --secondary-dark: #0066ff;
+            --dark: #1a1a1a;
+            --light: #ffffff;
+            --primary-light: #0066ff;
+            --secondary-light: #00ff88;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark), #000);
+            margin: 0;
+            min-height: 100vh;
+            color: var(--light);
+            transition: all 0.3s ease;
+            padding-top: 60px;
+        }
+
+        body.light {
+            background: linear-gradient(135deg, #f0f0f0, #ffffff);
+            color: var(--dark);
+        }
+
+        .nav-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .datetime-display {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: var(--glass-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
+            z-index: 999;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            color: var(--light);
+            border: 1px solid var(--glass-border);
+            text-decoration: none;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto 40px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--glass-border);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, var(--primary-dark), var(--secondary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .form-group:hover {
+            transform: translateY(-5px);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: inherit;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        select:hover, textarea:hover {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 10px var(--primary-dark);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .slider-container {
+            background: var(--glass-bg);
+            padding: 1rem;
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 1rem 0;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--primary-dark);
+            cursor: pointer;
+            margin-top: -8px;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: var(--glass-border);
+            border-radius: 2px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, var(--secondary-dark), var(--primary-dark));
+            color: var(--light);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #audio-preview {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--glass-bg);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 1.2rem;
+            margin: 1rem 0;
+        }
+
+        .error {
+            color: #ff4444;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--glass-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-dark);
+            border-radius: 5px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                margin: 80px 1rem 1rem;
+                padding: 1rem;
+            }
+
+            .nav-container {
+                padding: 0.5rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .nav-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .datetime-display {
+                position: static;
+                margin-top: 1rem;
+                text-align: center;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
 </head>
-<body class="min-h-screen transition-colors duration-200" 
-      x-data="{ 
-          darkMode: localStorage.getItem('darkMode') === 'true',
-          selectedVoice: '',
-          audioPath: null,
-          loading: false,
-          text: '',
-          rate: '0',
-          volume: '0',
-          pitch: '0',
-          style: 'default'
-      }"
-      :class="darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'"
-      x-init="
-          $watch('darkMode', value => localStorage.setItem('darkMode', value));
-          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-              darkMode = true;
-          }
-      ">
-
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="mb-8 flex justify-between items-center">
-            <h1 class="text-3xl font-bold">Text to Speech Converter</h1>
-            <button @click="darkMode = !darkMode" 
-                    class="p-2 rounded-lg" 
-                    :class="darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'">
-                <span x-text="darkMode ? '🌞' : '🌙'" class="text-xl"></span>
+<body>
+    <!-- Fixed Navigation Bar -->
+    <div class="nav-container">
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="toggleTheme()">
+                <i class="fas fa-moon"></i>
+                <span id="theme-text">Dark Mode</span>
             </button>
-        </header>
-
-        <!-- Main Form -->
-        <div class="max-w-4xl mx-auto" :class="darkMode ? 'bg-gray-800' : 'bg-white'" class="p-6 rounded-lg shadow-lg">
-            <form @submit.prevent="
-                loading = true;
-                fetch('/generate_audio', {
-                    method: 'POST',
-                    body: new FormData($event.target)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        audioPath = data.audio_path;
-                    } else {
-                        alert(data.error);
-                    }
-                    loading = false;
-                })">
-
-                <!-- Text Input -->
-                <div class="mb-6">
-                    <label class="block mb-2 font-semibold">Enter Text</label>
-                    <textarea 
-                        name="text" 
-                        x-model="text"
-                        required
-                        :class="darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'"
-                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-                        rows="4"></textarea>
-                </div>
-
-                <!-- Voice Selection -->
-                <div class="mb-6">
-                    <label class="block mb-2 font-semibold">Select Voice</label>
-                    <select 
-                        name="voice" 
-                        x-model="selectedVoice"
-                        required
-                        @change="
-                            fetch(`/voice_features/${selectedVoice}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (!data.error) {
-                                    style = 'default';
-                                }
-                            })"
-                        :class="darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'"
-                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
-                        <option value="">Choose a voice...</option>
-                        <template x-for="(info, name) in voices" :key="name">
-                            <option :value="name" x-text="name"></option>
-                        </template>
-                    </select>
-                </div>
-
-                <!-- Controls Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <!-- Rate Control -->
-                    <div>
-                        <label class="block mb-2 font-semibold">Rate</label>
-                        <div class="flex items-center">
-                            <input 
-                                type="range" 
-                                name="rate" 
-                                x-model="rate"
-                                min="-100" 
-                                max="100" 
-                                class="flex-1 mr-2"
-                            >
-                            <span x-text="rate + '%'" class="w-16 text-right"></span>
-                        </div>
-                    </div>
-
-                    <!-- Volume Control -->
-                    <div>
-                        <label class="block mb-2 font-semibold">Volume</label>
-                        <div class="flex items-center">
-                            <input 
-                                type="range" 
-                                name="volume" 
-                                x-model="volume"
-                                min="-100" 
-                                max="100" 
-                                class="flex-1 mr-2"
-                            >
-                            <span x-text="volume + '%'" class="w-16 text-right"></span>
-                        </div>
-                    </div>
-
-                    <!-- Pitch Control -->
-                    <div>
-                        <label class="block mb-2 font-semibold">Pitch</label>
-                        <div class="flex items-center">
-                            <input 
-                                type="range" 
-                                name="pitch" 
-                                x-model="pitch"
-                                min="-100" 
-                                max="100" 
-                                class="flex-1 mr-2"
-                            >
-                            <span x-text="pitch + 'Hz'" class="w-16 text-right"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="flex justify-center">
-                    <button 
-                        type="submit"
-                        :disabled="loading || !text || !selectedVoice"
-                        :class="{
-                            'bg-blue-600 hover:bg-blue-700': !loading && text && selectedVoice,
-                            'bg-gray-400': loading || !text || !selectedVoice
-                        }"
-                        class="px-6 py-3 rounded-lg text-white font-semibold transition-colors duration-200">
-                        <span x-show="!loading">Generate Speech</span>
-                        <span x-show="loading">Processing...</span>
-                    </button>
-                </div>
-            </form>
-
-            <!-- Audio Player -->
-            <div x-show="audioPath" class="mt-8">
-                <h3 class="text-xl font-semibold mb-4">Generated Audio</h3>
-                <div class="flex flex-col items-center space-y-4">
-                    <audio controls :src="audioPath" class="w-full max-w-md"></audio>
-                    <a :href="'/download_audio/' + audioPath.split('/').pop()" 
-                       class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200">
-                        <span class="mr-2">⬇️</span>
-                        Download Audio
-                    </a>
-                </div>
-            </div>
+            <button class="nav-btn" onclick="toggleLanguage()">
+                <i class="fas fa-language"></i>
+                <span id="lang-text">हिंदी</span>
+            </button>
         </div>
+        <a href="https://t.me/abhihacks" target="_blank" class="nav-btn">
+            <i class="fab fa-telegram-plane"></i>
+            <span>Contact Developer</span>
+        </a>
     </div>
 
+    <div class="datetime-display" id="datetime"></div>
+
+    <div class="container">
+        <h1 id="title">AI Text-to-Speech Generator</h1>
+        <form id="tts-form">
+            <div class="form-group">
+                <label for="language" id="language-label">Language</label>
+                <select id="language" name="language" required></select>
+            </div>
+            <div class="form-group">
+                <label for="voice" id="voice-label">Voice</label>
+                <select id="voice" name="voice" required></select>
+            </div>
+            <div class="form-group">
+                <label for="style" id="style-label">Style</label>
+                <select id="style" name="style"></select>
+            </div>
+            <div class="form-group">
+                <label for="text" id="text-label">Text</label>
+                <textarea id="text" name="text" required placeholder="Enter your text here..."></textarea>
+            </div>
+            <div class="controls">
+                <div class="slider-container">
+                    <label for="rate" id="rate-label">Speed</label>
+                    <input type="range" id="rate" name="rate" min="-50" max="50" value="0" step="1">
+                    <span class="slider-value" id="rate-value">+0%</span>
+                </div>
+                <div class="slider-container">
+                    <label for="volume" id="volume-label">Volume</label>
+                    <input type="range" id="volume" name="volume" min="-50" max="50" value="0" step="1">
+                    <span class="slider-value" id="volume-value">+0%</span>
+                </div>
+                <div class="slider-container">
+                    <label for="pitch" id="pitch-label">Pitch</label>
+                    <input type="range" id="pitch" name="pitch" min="-50" max="50" value="0" step="1">
+                    <span class="slider-value" id="pitch-value">+0Hz</span>
+                </div>
+            </div>
+            <button type="submit" class="btn" id="generate-btn">Generate Audio</button>
+            <div id="loading" class="loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Generating...
+            </div>
+            <div id="error" class="error"></div>
+            <div id="audio-preview" style="display: none">
+                <audio id="audio-player" controls></audio>
+                <button id="download-btn" class="btn">
+                    <i class="fas fa-download"></i> Download Audio
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const voices = {{ voices|tojson|safe }};
+        const form = document.getElementById('tts-form');
+        const languageSelect = document.getElementById('language');
+        const voiceSelect = document.getElementById('voice');
+        const styleSelect = document.getElementById('style');
+        const body = document.body;
+
+        const textElements = {
+            title: { en: "AI Text-to-Speech Generator", hi: "एआई टेक्स्ट-टू-स्पीच जनरेटर" },
+            languageLabel: { en: "Language", hi: "भाषा" },
+            voiceLabel: { en: "Voice", hi: "आवाज़" },
+            styleLabel: { en: "Style", hi: "शैली" },
+            textLabel: { en: "Text", hi: "पाठ" },
+            rateLabel: { en: "Speed", hi: "गति" },
+            volumeLabel: { en: "Volume", hi: "आवाज़ की मात्रा" },
+            pitchLabel: { en: "Pitch", hi: "पिच" },
+            generateBtn: { en: "Generate Audio", hi: "ऑडियो बनाएं" }
+        };
+
+        let currentLanguage = "en";
+
+        function updateDateTime() {
+            const now = new Date();
+            const formatted = now.toISOString().replace('T', ' ').substr(0, 19);
+            document.getElementById('datetime').textContent = `UTC: ${formatted}`;
+        }
+
+        function toggleTheme() {
+            body.classList.toggle('light');
+            updateThemeText();
+        }
+
+        function updateThemeText() {
+            const themeText = document.getElementById('theme-text');
+            themeText.textContent = body.classList.contains('light') ? 'Dark Mode' : 'Light Mode';
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === "en" ? "hi" : "en";
+            updateLangText();
+            updateLabels();
+        }
+
+        function updateLangText() {
+            const langText = document.getElementById('lang-text');
+            langText.textContent = currentLanguage === 'en' ? 'हिंदी' : 'English';
+        }
+
+        function updateLabels() {
+            Object.keys(textElements).forEach(key => {
+                const element = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase());
+                if (element) {
+                    element.innerText = textElements[key][currentLanguage];
+                }
+            });
+        }
+
+        function updateLanguages() {
+            languageSelect.innerHTML = Object.keys(voices)
+                .map(lang => `<option value="${lang}">${lang}</option>`)
+                .join('');
+            updateVoices();
+        }
+
+        function updateVoices() {
+            const language = languageSelect.value;
+            voiceSelect.innerHTML = Object.keys(voices[language])
+                .map(voice => `<option value="${voice}">${voice}</option>`)
+                .join('');
+            updateStyles();
+        }
+
+        function updateStyles() {
+            const language = languageSelect.value;
+            const voice = voiceSelect.value;
+            styleSelect.innerHTML = voices[language][voice].styles
+                .map(style => `<option value="${style}">${style}</option>`)
+                .join('');
+        }
+
+        languageSelect.addEventListener('change', updateVoices);
+        voiceSelect.addEventListener('change', updateStyles);
+
+        // Previous code remains the same...
+
+        ['rate', 'volume', 'pitch'].forEach(param => {
+            const slider = document.getElementById(param);
+            const value = document.getElementById(`${param}-value`);
+            slider.addEventListener('input', () => {
+                const val = parseInt(slider.value);
+                value.textContent = `${val >= 0 ? '+' : ''}${val}${
+                    param === 'pitch' ? 'Hz' : '%'
+                }`;
+            });
+        });
+
+        // Add date/time and user display
+        function updateDateTime() {
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const time = now.toTimeString().split(' ')[0];
+            const formatted = `${date} ${time}`;
+            document.getElementById('datetime').innerHTML = `
+                <i class="far fa-clock"></i> ${formatted}<br>
+                <i class="far fa-user"></i> ${userLogin}
+            `;
+        }
+
+        // Set user login
+        const userLogin = "Abhisalvi452";
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').textContent = '';
+            document.getElementById('audio-preview').style.display = 'none';
+
+            try {
+                const response = await fetch('/generate_audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const audioPlayer = document.getElementById('audio-player');
+                    audioPlayer.src = result.audio_path;
+                    document.getElementById('audio-preview').style.display = 'block';
+                    document.getElementById('download-btn').onclick = () => {
+                        window.location.href = `/download_audio/${result.filename}`;
+                    };
+                } else {
+                    document.getElementById('error').textContent = result.error;
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = 'An error occurred';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        // Initialize everything
+        updateLanguages();
+        updateThemeText();
+        updateLangText();
+        updateDateTime();
+
+        // Update date/time every second
+        setInterval(updateDateTime, 1000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Shift + D for toggling theme
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                toggleTheme();
+            }
+            // Ctrl/Cmd + Shift + L for toggling language
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
+                e.preventDefault();
+                toggleLanguage();
+            }
+        });
+
+        // Add tooltips for keyboard shortcuts
+        const themeButton = document.querySelector('.nav-btn');
+        const langButton = document.querySelectorAll('.nav-btn')[1];
+        
+        themeButton.title = 'Toggle theme (Ctrl/Cmd + Shift + D)';
+        langButton.title = 'Change language (Ctrl/Cmd + Shift + L)';
+    </script>
 </body>
 </html>
