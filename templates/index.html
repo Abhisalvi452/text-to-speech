@@ -7,82 +7,74 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #00ff88;
-            --secondary: #0066ff;
+            --primary-dark: #00ff88;
+            --secondary-dark: #0066ff;
             --dark: #1a1a1a;
             --light: #ffffff;
-            --glow: 0 0 10px var(--primary);
+            --primary-light: #0066ff;
+            --secondary-light: #00ff88;
+            --glow-dark: 0 0 10px var(--primary-dark);
+            --glow-light: 0 0 10px var(--primary-light);
         }
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, var(--dark), #000);
+            background: var(--light);
             margin: 0;
             min-height: 100vh;
-            color: var(--light);
-            perspective: 1000px;
+            color: var(--dark);
             padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark {
+            background: var(--dark);
+            color: var(--light);
         }
 
         .container {
             max-width: 800px;
             margin: 40px auto;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.9);
             padding: 30px;
             border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transform-style: preserve-3d;
-            animation: float 6s ease-in-out infinite;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: background 0.3s, border 0.3s;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotateX(2deg); }
-            50% { transform: translateY(-20px) rotateX(-2deg); }
+        body.dark .container {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         h1 {
-            color: var(--primary);
             text-align: center;
             font-size: 2.5em;
             margin-bottom: 30px;
-            text-shadow: var(--glow);
         }
 
         .form-group {
             margin-bottom: 25px;
-            transform-style: preserve-3d;
-            transition: transform 0.3s ease;
-        }
-
-        .form-group:hover {
-            transform: translateZ(20px);
         }
 
         label {
             display: block;
             margin-bottom: 10px;
-            color: var(--primary);
             font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         select, textarea, input[type="range"] {
             width: 100%;
             padding: 12px;
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.2);
             border-radius: 10px;
-            color: var(--light);
             transition: all 0.3s ease;
         }
 
-        select:hover, textarea:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: var(--primary);
-            box-shadow: var(--glow);
+        body.dark select, body.dark textarea, body.dark input[type="range"] {
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         textarea {
@@ -97,26 +89,8 @@
             margin-bottom: 30px;
         }
 
-        .slider-container {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 15px;
-            transition: transform 0.3s ease;
-        }
-
-        .slider-container:hover {
-            transform: scale(1.02);
-        }
-
-        .slider-value {
-            text-align: center;
-            color: var(--primary);
-            font-size: 0.9em;
-            margin-top: 5px;
-        }
-
         .btn {
-            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            background: linear-gradient(45deg, var(--secondary-light), var(--primary-light));
             color: var(--light);
             padding: 15px 30px;
             border: none;
@@ -130,9 +104,8 @@
             margin-bottom: 15px;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--glow);
+        body.dark .btn {
+            background: linear-gradient(45deg, var(--secondary-dark), var(--primary-dark));
         }
 
         #audio-preview {
@@ -140,98 +113,79 @@
             text-align: center;
         }
 
-        audio {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .telegram-button {
+        .theme-toggle, .language-toggle, .telegram-button {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(45deg, #0088cc, #00a2ff);
+            background: linear-gradient(45deg, var(--secondary-light), var(--primary-light));
             color: white;
             padding: 15px 25px;
-            border-radius: 50px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
             transition: all 0.3s ease;
             z-index: 1000;
         }
 
-        .telegram-button:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 136, 204, 0.4);
+        .theme-toggle {
+            top: 30px;
+            left: 30px;
         }
 
-        .loading {
-            text-align: center;
-            color: var(--primary);
-            margin: 20px 0;
+        .language-toggle {
+            bottom: 30px;
+            left: 30px;
         }
 
-        .error {
-            color: #ff4444;
-            text-align: center;
-            margin-top: 15px;
+        .telegram-button {
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #0088cc, #00a2ff);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 5px;
+        body.dark .theme-toggle, body.dark .language-toggle, body.dark .telegram-button {
+            background: linear-gradient(45deg, var(--secondary-dark), var(--primary-dark));
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Neural Text-to-Speech</h1>
+        <h1 id="title">Neural Text-to-Speech</h1>
         <form id="tts-form">
             <div class="form-group">
-                <label for="language">Language</label>
+                <label for="language" id="language-label">Language</label>
                 <select id="language" name="language" required></select>
             </div>
             <div class="form-group">
-                <label for="voice">Voice</label>
+                <label for="voice" id="voice-label">Voice</label>
                 <select id="voice" name="voice" required></select>
             </div>
             <div class="form-group">
-                <label for="style">Style</label>
+                <label for="style" id="style-label">Style</label>
                 <select id="style" name="style"></select>
             </div>
             <div class="form-group">
-                <label for="text">Text</label>
+                <label for="text" id="text-label">Text</label>
                 <textarea id="text" name="text" required placeholder="Enter your text here..."></textarea>
             </div>
             <div class="controls">
                 <div class="slider-container">
-                    <label for="rate">Speed</label>
+                    <label for="rate" id="rate-label">Speed</label>
                     <input type="range" id="rate" name="rate" min="-50" max="50" value="0" step="1">
                     <span class="slider-value" id="rate-value">+0%</span>
                 </div>
                 <div class="slider-container">
-                    <label for="volume">Volume</label>
+                    <label for="volume" id="volume-label">Volume</label>
                     <input type="range" id="volume" name="volume" min="-50" max="50" value="0" step="1">
                     <span class="slider-value" id="volume-value">+0%</span>
                 </div>
                 <div class="slider-container">
-                    <label for="pitch">Pitch</label>
+                    <label for="pitch" id="pitch-label">Pitch</label>
                     <input type="range" id="pitch" name="pitch" min="-50" max="50" value="0" step="1">
                     <span class="slider-value" id="pitch-value">+0Hz</span>
                 </div>
             </div>
-            <button type="submit" class="btn">Generate Audio</button>
+            <button type="submit" class="btn" id="generate-btn">Generate Audio</button>
             <div id="loading" class="loading" style="display: none;">
                 <i class="fas fa-spinner fa-spin"></i> Generating...
             </div>
@@ -245,6 +199,8 @@
         </form>
     </div>
 
+    <div class="theme-toggle" onclick="toggleTheme()">Toggle Theme</div>
+    <div class="language-toggle" onclick="toggleLanguage()">Change Language</div>
     <a href="https://t.me/abhihacks" target="_blank" class="telegram-button">
         <i class="fab fa-telegram-plane"></i>
         Contact Developer
@@ -256,14 +212,46 @@
         const languageSelect = document.getElementById('language');
         const voiceSelect = document.getElementById('voice');
         const styleSelect = document.getElementById('style');
-        
+        const body = document.body;
+
+        const textElements = {
+            title: { en: "Neural Text-to-Speech", hi: "न्यूरल टेक्स्ट-टू-स्पीच" },
+            languageLabel: { en: "Language", hi: "भाषा" },
+            voiceLabel: { en: "Voice", hi: "आवाज़" },
+            styleLabel: { en: "Style", hi: "शैली" },
+            textLabel: { en: "Text", hi: "पाठ" },
+            rateLabel: { en: "Speed", hi: "गति" },
+            volumeLabel: { en: "Volume", hi: "आयतन" },
+            pitchLabel: { en: "Pitch", hi: "पिच" },
+            generateBtn: { en: "Generate Audio", hi: "ऑडियो उत्पन्न करें" }
+        };
+
+        let currentLanguage = "en";
+
+        function toggleTheme() {
+            body.classList.toggle('dark');
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === "en" ? "hi" : "en";
+            document.getElementById('title').innerText = textElements.title[currentLanguage];
+            document.getElementById('language-label').innerText = textElements.languageLabel[currentLanguage];
+            document.getElementById('voice-label').innerText = textElements.voiceLabel[currentLanguage];
+            document.getElementById('style-label').innerText = textElements.styleLabel[currentLanguage];
+            document.getElementById('text-label').innerText = textElements.textLabel[currentLanguage];
+            document.getElementById('rate-label').innerText = textElements.rateLabel[currentLanguage];
+            document.getElementById('volume-label').innerText = textElements.volumeLabel[currentLanguage];
+            document.getElementById('pitch-label').innerText = textElements.pitchLabel[currentLanguage];
+            document.getElementById('generate-btn').innerText = textElements.generateBtn[currentLanguage];
+        }
+
         function updateLanguages() {
             languageSelect.innerHTML = Object.keys(voices)
                 .map(lang => `<option value="${lang}">${lang}</option>`)
                 .join('');
             updateVoices();
         }
-        
+
         function updateVoices() {
             const language = languageSelect.value;
             voiceSelect.innerHTML = Object.keys(voices[language])
@@ -271,7 +259,7 @@
                 .join('');
             updateStyles();
         }
-        
+
         function updateStyles() {
             const language = languageSelect.value;
             const voice = voiceSelect.value;
@@ -279,35 +267,33 @@
                 .map(style => `<option value="${style}">${style}</option>`)
                 .join('');
         }
-        
+
         languageSelect.addEventListener('change', updateVoices);
         voiceSelect.addEventListener('change', updateStyles);
-        
+
         ['rate', 'volume', 'pitch'].forEach(param => {
             const slider = document.getElementById(param);
             const value = document.getElementById(`${param}-value`);
             slider.addEventListener('input', () => {
                 const val = parseInt(slider.value);
-                value.textContent = `${val >= 0 ? '+' : ''}${val}${
-                    param === 'pitch' ? 'Hz' : '%'
-                }`;
+                value.textContent = `${val >= 0 ? '+' : ''}${val}${param === 'pitch' ? 'Hz' : '%'}`;
             });
         });
-        
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(form);
             document.getElementById('loading').style.display = 'block';
             document.getElementById('error').textContent = '';
             document.getElementById('audio-preview').style.display = 'none';
-            
+
             try {
                 const response = await fetch('/generate_audio', {
                     method: 'POST',
                     body: formData
                 });
                 const result = await response.json();
-                
+
                 if (result.success) {
                     const audioPlayer = document.getElementById('audio-player');
                     audioPlayer.src = result.audio_path;
@@ -324,10 +310,8 @@
                 document.getElementById('loading').style.display = 'none';
             }
         });
-        
+
         updateLanguages();
     </script>
 </body>
 </html>
-<script async="async" data-cfasync="false" src="//pl25798766.profitablecpmrate.com/d626b0bfaadbc3493846e1aac4919048/invoke.js"></script>
-<div id="container-d626b0bfaadbc3493846e1aac4919048"></div>
